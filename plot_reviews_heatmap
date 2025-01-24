@@ -1,0 +1,47 @@
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+from Merged_data import combined_data
+
+def plot_reviews_heatmap(data):
+    ''' Generates a heatmap showing the number of reviews by genres and release year. The deeper the blue tone indicate the higher the review numbers
+        
+    Args: 
+        combined_data (df): a cleaned dataframe showing top 100 VR game's attributes
+
+    Returns:
+        a heatmap showing the number of reviews by genres and release year for those top 100 VR games
+    '''
+    df = pd.DataFrame(data)
+
+    # Conver release_year to year and Number_of Reviews to Numeric format
+    df['Release_Year'] = pd.to_datetime(df['Release_Date'], errors='coerce').dt.year.astype('Int64')
+    df['Number_of_Reviews'] = pd.to_numeric(df['Number_of_Reviews'], errors='coerce').fillna(0)
+
+    # Split each genre string into a list, and use explode to expand lists into rows
+    df = df.assign(Genres=df['Genres'].str.split(', ')).explode('Genres')
+
+    # Group by 'Release_Year' and 'Genres', and sum the 'Number_of_Reviews'
+    genre_reviews = df.groupby(['Release_Year', 'Genres'])['Number_of_Reviews'].sum().reset_index()
+
+    # Create a pivot table for the heatmap
+    pivot_table = genre_reviews.pivot_table(
+        index='Genres', 
+        columns='Release_Year', 
+        values='Number_of_Reviews', 
+        fill_value=0
+    )
+    
+    # Plot the heatmap
+    # Adjust the figure size
+    plt.figure(figsize=(20, 15))
+    sns.heatmap(pivot_table, cmap='Blues', annot=True, fmt='g', linewidths=0.5)
+    plt.title('Number of Reviews by Genre and Release Year')
+    plt.xlabel('Release Year')
+    plt.ylabel('Genre')
+    plt.tight_layout()
+    plt.show()
+    
+    return None
+
+plot_reviews_heatmap(combined_data)
